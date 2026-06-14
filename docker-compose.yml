@@ -1,0 +1,83 @@
+version: "3.8"
+
+services:
+
+  # === DATABASE — stores users and transactions ===
+  postgres:
+    image: postgres:15-alpine
+    container_name: gpay-db
+    environment:
+      POSTGRES_DB: payments
+      POSTGRES_USER: admin
+      POSTGRES_PASSWORD: password123
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./postgres-init:/docker-entrypoint-initdb.d
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d payments"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # === CACHE — speeds up balance lookups ===
+  redis:
+    image: redis:7-alpine
+    container_name: gpay-cache
+    networks:
+      - backend-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+
+  # === BACKEND API — the brain ===
+  backend:
+    build: ./backend
+    container_name: gpay-api
+    environment:
+      DB_HOST: postgres
+      DB_NAME: payments
+      DB_USER: admin
+      DB_PASSWORD: password123
+      REDIS_HOST: redis
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - backend-network
+      - frontend-network
+    restart: unless-stopped
+
+  # === FRONTEND — the payment screen ===
+  frontend:
+    build: ./frontend
+    container_name: gpay-frontend
+    networks:
+      - frontend-network
+
+  # === NGINX — single entry point ===
+  nginx:
+    build: ./nginx
+    container_name: gpay-nginx
+    ports:
+      - "80:80"
+    depends_on:
+      - frontend
+      - backend
+    networks:
+      - frontend-network
+    restart: unless-stopped
+
+networks:
+  backend-network:
+    driver: bridge
+  frontend-network:
+    driver: bridge
+
+volumes:
+  pgdata:
