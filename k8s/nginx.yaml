@@ -3,8 +3,6 @@ kind: Deployment
 metadata:
   name: nginx
 spec:
-  imagePullSecrets:
-      - name: ecr-secret
   replicas: 1
   selector:
     matchLabels:
@@ -14,6 +12,8 @@ spec:
       labels:
         app: nginx
     spec:
+      imagePullSecrets:
+      - name: ecr-secret
       containers:
       - name: nginx
         image: 922120356958.dkr.ecr.ap-south-2.amazonaws.com/gpay-nginx:latest
@@ -31,5 +31,5 @@ spec:
   ports:
   - port: 80
     targetPort: 80
-    nodePort: 31000      # fixed port instead of random
-  type: NodePort         # THIS exposes it to the outside world
+    nodePort: 31000
+  type: NodePort
