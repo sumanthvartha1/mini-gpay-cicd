@@ -1,42 +1,67 @@
-# ============================================
-# POSTGRES PERSISTENT VOLUME CLAIM
-# Requests 1GB of storage for database data
-# ============================================
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
   name: postgres-pvc
 spec:
   accessModes:
-    - ReadWriteOnce    # only one pod can mount this at a time
+    - ReadWriteOnce
   resources:
     requests:
-      storage: 1Gi     # request 1 GB of disk space
+      storage: 1Gi
 
 ---
-# ============================================
-# POSTGRES DEPLOYMENT
-# Manages the postgres pod
-# ============================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: postgres-init-script
+data:
+  init.sql: |
+    CREATE TABLE IF NOT EXISTS users (
+        id SERIAL PRIMARY KEY,
+        name VARCHAR(100) NOT NULL,
+        phone VARCHAR(15) UNIQUE NOT NULL,
+        balance DECIMAL(10,2) DEFAULT 0.00
+    );
+    CREATE TABLE IF NOT EXISTS transactions (
+        id SERIAL PRIMARY KEY,
+        sender_id INTEGER REFERENCES users(id),
+        receiver_id INTEGER REFERENCES users(id),
+        amount DECIMAL(10,2) NOT NULL,
+        status VARCHAR(20) DEFAULT 'completed',
+        created_at TIMESTAMP DEFAULT NOW()
+    );
+    INSERT INTO users (name, phone, balance) VALUES
+        ('Sumanth', '9999999901', 10000.00),
+        ('Rahul', '9999999902', 5000.00),
+        ('Priya', '9999999903', 7500.00),
+        ('Amit', '9999999904', 3000.00)
+    ON CONFLICT DO NOTHING;
+    INSERT INTO transactions (sender_id, receiver_id, amount) VALUES
+        (1, 2, 500.00),
+        (3, 1, 1000.00),
+        (1, 4, 250.00)
+    ON CONFLICT DO NOTHING;
+
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: postgres
 spec:
-  replicas: 1          # run exactly 1 pod
+  replicas: 1
   selector:
     matchLabels:
-      app: postgres    # find pods with this label
+      app: postgres
   template:
     metadata:
       labels:
-        app: postgres  # label this pod
+        app: postgres
     spec:
       containers:
       - name: postgres
-        image: postgres:15-alpine    # pull from Docker Hub (NOT ECR)
+        image: postgres:15-alpine
         ports:
-        - containerPort: 5432         # postgres listens here
+        - containerPort: 5432
         env:
         - name: POSTGRES_DB
           value: "payments"
@@ -46,26 +71,26 @@ spec:
           value: "password123"
         volumeMounts:
         - name: postgres-storage
-          mountPath: /var/lib/postgresql/data    # where postgres stores data
+          mountPath: /var/lib/postgresql/data
+        - name: init-script
+          mountPath: /docker-entrypoint-initdb.d
       volumes:
       - name: postgres-storage
         persistentVolumeClaim:
-          claimName: postgres-pvc    # use the PVC we created above
+          claimName: postgres-pvc
+      - name: init-script
+        configMap:
+          name: postgres-init-script
 
 ---
-# ============================================
-# POSTGRES SERVICE
-# Gives postgres a stable network address
-# Other pods reach it via: postgres:5432
-# ============================================
 apiVersion: v1
 kind: Service
 metadata:
   name: postgres
 spec:
   selector:
-    app: postgres      # route traffic to pods with this label
+    app: postgres
   ports:
-  - port: 5432         # service listens on 5432
-    targetPort: 5432   # forwards to pod port 5432
-  type: ClusterIP      # internal only (not exposed outside cluster)
+  - port: 5432
+    targetPort: 5432
+  type: ClusterIP
