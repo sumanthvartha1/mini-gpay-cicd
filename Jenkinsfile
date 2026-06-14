@@ -5,7 +5,7 @@ pipeline {
     // VARIABLES — used throughout the pipeline
     environment {
         AWS_REGION = 'ap-south-2'
-        ECR_REGISTRY = '922120356958.dkr.ecr.us-east-1.amazonaws.com'
+        ECR_REGISTRY = '922120356958.dkr.ecr.ap-south-2.amazonaws.com'
         IMAGE_TAG = "${BUILD_NUMBER}"
     }
 
