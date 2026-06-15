@@ -1,3 +1,6 @@
+# ============================================
+# POSTGRES PERSISTENT VOLUME CLAIM
+# ============================================
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
@@ -10,39 +13,9 @@ spec:
       storage: 1Gi
 
 ---
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: postgres-init-script
-data:
-  init.sql: |
-    CREATE TABLE IF NOT EXISTS users (
-        id SERIAL PRIMARY KEY,
-        name VARCHAR(100) NOT NULL,
-        phone VARCHAR(15) UNIQUE NOT NULL,
-        balance DECIMAL(10,2) DEFAULT 0.00
-    );
-    CREATE TABLE IF NOT EXISTS transactions (
-        id SERIAL PRIMARY KEY,
-        sender_id INTEGER REFERENCES users(id),
-        receiver_id INTEGER REFERENCES users(id),
-        amount DECIMAL(10,2) NOT NULL,
-        status VARCHAR(20) DEFAULT 'completed',
-        created_at TIMESTAMP DEFAULT NOW()
-    );
-    INSERT INTO users (name, phone, balance) VALUES
-        ('Sumanth', '9999999901', 10000.00),
-        ('Rahul', '9999999902', 5000.00),
-        ('Priya', '9999999903', 7500.00),
-        ('Amit', '9999999904', 3000.00)
-    ON CONFLICT DO NOTHING;
-    INSERT INTO transactions (sender_id, receiver_id, amount) VALUES
-        (1, 2, 500.00),
-        (3, 1, 1000.00),
-        (1, 4, 250.00)
-    ON CONFLICT DO NOTHING;
-
----
+# ============================================
+# POSTGRES DEPLOYMENT
+# ============================================
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -80,9 +53,12 @@ spec:
           claimName: postgres-pvc
       - name: init-script
         configMap:
-          name: postgres-init-script
+          name: postgres-init
 
 ---
+# ============================================
+# POSTGRES SERVICE
+# ============================================
 apiVersion: v1
 kind: Service
 metadata:
