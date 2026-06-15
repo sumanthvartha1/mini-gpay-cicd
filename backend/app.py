@@ -215,7 +215,10 @@ def get_transactions(user_id):
 def health():
     """Simple health check endpoint. Returns 200 if the app is running."""
     return jsonify({"status": "healthy"})
-
+# ROUTE 6 : NEW ROUTE
+@app.route("/api/status")
+def status():
+    return jsonify({"status": "running", "version": "3.0", "deployed_via": "CI/CD"})
 # ============================================
 # START THE APP
 # ============================================
