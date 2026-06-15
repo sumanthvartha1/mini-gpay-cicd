@@ -172,11 +172,6 @@ kubectl apply -f k8s/
 
 **PGDATA subdirectory trick** — Kubernetes PersistentVolumes create a `lost+found` directory. PostgreSQL sees it and skips initialization. Setting `PGDATA=/var/lib/postgresql/data/pgdata` forces PostgreSQL to use a clean subdirectory.
 
-## Cost
-
-- EC2 t2.medium: ~$0.0464/hour (~$1.11/day)
-- ECR storage: negligible for 3 small images
-- Stop EC2 when not using it — only pays for 20GB EBS storage (~$0.10/month)
 
 ## What I'd do differently in production
 
