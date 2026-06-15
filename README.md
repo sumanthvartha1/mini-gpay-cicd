@@ -14,33 +14,8 @@ browser → nginx (port 80) → routes /api to backend, / to frontend
 
 ## Architecture
 
-```
-                         ┌──────────────┐
-                         │   browser    │
-                         └──────┬───────┘
-                                │ port 80
-                                ▼
-┌─────────────────────────────────────────────────────────┐
-│                    frontend network                      │
-│                                                         │
-│   ┌─────────┐      ┌──────────┐      ┌──────────────┐  │
-│   │  nginx   │─────▶│ frontend │      │   backend    │  │
-│   │  proxy   │─────▶│  HTML/JS │      │  Flask API   │  │
-│   └─────────┘      └──────────┘      └──────┬───────┘  │
-│                                              │          │
-└──────────────────────────────────────────────┼──────────┘
-                                               │
-┌──────────────────────────────────────────────┼──────────┐
-│                    backend network            │          │
-│                                              │          │
-│            ┌────────────┐         ┌──────────┘──┐       │
-│            │ PostgreSQL  │         │    Redis     │      │
-│            │ port 5432   │         │  port 6379   │      │
-│            │ + volume    │         │  (no volume) │      │
-│            └────────────┘         └─────────────┘       │
-│                                                         │
-└─────────────────────────────────────────────────────────┘
-```
+<img width="1442" height="1040" alt="image" src="https://github.com/user-attachments/assets/4a75515e-afe1-45f9-88e4-66510ca58c47" />
+
 
 Two separate Docker networks. The database sits on the backend network only — nginx and the frontend can never reach it directly. The backend bridges both networks. This is the same isolation pattern banks use in production.
 
