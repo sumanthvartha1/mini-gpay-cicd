@@ -14,7 +14,8 @@ browser → nginx (port 80) → routes /api to backend, / to frontend
 
 ## Architecture
 
-<img width="1442" height="1040" alt="image" src="https://github.com/user-attachments/assets/4a75515e-afe1-45f9-88e4-66510ca58c47" />
+<img width="1442" height="1000" alt="image" src="https://github.com/user-attachments/assets/98c6e0a0-8300-4282-81f1-63fcb2c11acd" />
+
 
 
 Two separate Docker networks. The database sits on the backend network only — nginx and the frontend can never reach it directly. The backend bridges both networks. This is the same isolation pattern banks use in production.
