@@ -1,0 +1,46 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend
+  template:
+    metadata:
+      labels:
+        app: backend
+    spec:
+      imagePullSecrets:
+      - name: ecr-secret
+      containers:
+      - name: backend
+        image: 922120356958.dkr.ecr.ap-south-2.amazonaws.com/gpay-backend:latest
+        # IMPORTANT: replace 922120356958 with YOUR account ID
+        ports:
+        - containerPort: 5000
+        env:
+        - name: DB_HOST
+          value: "postgres"       # Kubernetes service name
+        - name: DB_NAME
+          value: "payments"
+        - name: DB_USER
+          value: "admin"
+        - name: DB_PASSWORD
+          value: "password123"
+        - name: REDIS_HOST
+          value: "redis"          # Kubernetes service name
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend
+spec:
+  selector:
+    app: backend
+  ports:
+  - port: 5000
+    targetPort: 5000
+  type: ClusterIP          # internal — nginx will reach it

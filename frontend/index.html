@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Mini GPay</title>
+    <style>
+        /* ===== STYLING — makes it look like a real payment app ===== */
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #f0f2f5;
+            color: #1a1a2e;
+        }
+        .header {
+            background: #1a73e8;
+            color: white;
+            padding: 20px;
+            text-align: center;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        .container { max-width: 480px; margin: 20px auto; padding: 0 16px; }
+        .card {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .card h2 { font-size: 16px; color: #666; margin-bottom: 12px; }
+        .balance-amount { font-size: 36px; font-weight: bold; color: #1a73e8; }
+        .balance-source { font-size: 12px; color: #999; margin-top: 4px; }
+        .user-select { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; margin-bottom: 12px; }
+        .amount-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 8px; font-size: 16px; margin-bottom: 12px; }
+        .btn {
+            width: 100%; padding: 14px; border: none; border-radius: 8px;
+            font-size: 16px; font-weight: bold; cursor: pointer; margin-bottom: 8px;
+        }
+        .btn-primary { background: #1a73e8; color: white; }
+        .btn-primary:hover { background: #1557b0; }
+        .btn-secondary { background: #e8f0fe; color: #1a73e8; }
+        .transaction {
+            display: flex; justify-content: space-between; align-items: center;
+            padding: 12px 0; border-bottom: 1px solid #f0f0f0;
+        }
+        .transaction:last-child { border-bottom: none; }
+        .tx-name { font-weight: 500; }
+        .tx-date { font-size: 12px; color: #999; }
+        .tx-amount { font-weight: bold; }
+        .tx-sent { color: #d93025; }
+        .tx-received { color: #0d652d; }
+        .message { padding: 12px; border-radius: 8px; margin-bottom: 12px; text-align: center; }
+        .message-success { background: #e6f4ea; color: #0d652d; }
+        .message-error { background: #fce8e6; color: #d93025; }
+        .hidden { display: none; }
+        .tabs { display: flex; gap: 8px; margin-bottom: 16px; }
+        .tab { flex: 1; padding: 10px; text-align: center; border-radius: 8px; cursor: pointer; font-weight: 500; background: #e8f0fe; color: #1a73e8; }
+        .tab.active { background: #1a73e8; color: white; }
+    </style>
+</head>
+<body>
+    <!-- ===== HEADER ===== -->
+    <div class="header">Mini GPay</div>
+    
+    <div class="container">
+        <!-- ===== SELECT YOUR ACCOUNT ===== -->
+        <div class="card">
+            <h2>Your Account</h2>
+            <select id="currentUser" class="user-select" onchange="loadUserData()">
+                <option value="">Select your account...</option>
+            </select>
+        </div>
+
+        <!-- ===== BALANCE CARD ===== -->
+        <div id="balanceCard" class="card hidden">
+            <h2>Available Balance</h2>
+            <div id="balanceAmount" class="balance-amount">₹0.00</div>
+            <div id="balanceSource" class="balance-source"></div>
+            <button class="btn btn-secondary" onclick="loadBalance()" style="margin-top:12px">Refresh Balance</button>
+        </div>
+
+        <!-- ===== TABS ===== -->
+        <div id="tabsSection" class="hidden">
+            <div class="tabs">
+                <div class="tab active" onclick="showTab('send')">Send Money</div>
+                <div class="tab" onclick="showTab('history')">History</div>
+            </div>
+        </div>
+
+        <!-- ===== SEND MONEY SECTION ===== -->
+        <div id="sendSection" class="card hidden">
+            <h2>Send Money</h2>
+            <div id="sendMessage" class="hidden"></div>
+            <select id="receiver" class="user-select">
+                <option value="">Select receiver...</option>
+            </select>
+            <input type="number" id="amount" class="amount-input" placeholder="Enter amount (₹)" min="1">
+            <button class="btn btn-primary" onclick="sendMoney()">Send Money</button>
+        </div>
+
+        <!-- ===== TRANSACTION HISTORY ===== -->
+        <div id="historySection" class="card hidden">
+            <h2>Transaction History</h2>
+            <div id="transactionList">No transactions yet.</div>
+        </div>
+    </div>
+
+    <script>
+    // ===== JAVASCRIPT — talks to the backend API =====
+    // All API calls go to /api/* — nginx routes them to the backend container
+
+    let currentUserId = null;
+    let allUsers = [];
+
+    // Load all users when the page opens
+    async function loadUsers() {
+        // This calls GET /api/users
+        // nginx receives it → sees /api → forwards to backend container
+        // backend queries PostgreSQL → returns user list
+        const response = await fetch("/api/users");
+        allUsers = await response.json();
+        
+        const select = document.getElementById("currentUser");
+        allUsers.forEach(user => {
+            const option = document.createElement("option");
+            option.value = user.id;
+            option.textContent = `${user.name} (${user.phone})`;
+            select.appendChild(option);
+        });
+    }
+
+    // When user selects their account
+    function loadUserData() {
+        currentUserId = document.getElementById("currentUser").value;
+        if (!currentUserId) return;
+        
+        // Show all sections
+        document.getElementById("balanceCard").classList.remove("hidden");
+        document.getElementById("tabsSection").classList.remove("hidden");
+        document.getElementById("sendSection").classList.remove("hidden");
+        
+        loadBalance();
+        loadReceivers();
+        loadTransactions();
+    }
+
+    // Fetch balance — demonstrates Redis caching
+    async function loadBalance() {
+        // This calls GET /api/balance/1
+        // Backend checks Redis first (cache HIT = instant)
+        // If not cached → queries PostgreSQL (slower) → caches result
+        const response = await fetch(`/api/balance/${currentUserId}`);
+        const data = await response.json();
+        
+        document.getElementById("balanceAmount").textContent = `₹${parseFloat(data.balance).toFixed(2)}`;
+        // Show whether data came from cache or database
+        document.getElementById("balanceSource").textContent = 
+            data.source === "cache" ? "⚡ from cache (fast)" : "🗄️ from database";
+    }
+
+    // Populate receiver dropdown (exclude current user)
+    function loadReceivers() {
+        const select = document.getElementById("receiver");
+        select.innerHTML = '<option value="">Select receiver...</option>';
+        allUsers.forEach(user => {
+            if (user.id != currentUserId) {
+                const option = document.createElement("option");
+                option.value = user.id;
+                option.textContent = `${user.name} (${user.phone})`;
+                select.appendChild(option);
+            }
+        });
+    }
+
+    // Send money — demonstrates POST request + database transaction
+    async function sendMoney() {
+        const receiverId = document.getElementById("receiver").value;
+        const amount = document.getElementById("amount").value;
+        const msgDiv = document.getElementById("sendMessage");
+        
+        if (!receiverId || !amount) {
+            showMessage(msgDiv, "Please select receiver and enter amount", "error");
+            return;
+        }
+
+        // This calls POST /api/send with JSON body
+        // Backend: checks balance → deducts from sender → adds to receiver
+        //          → records transaction → clears Redis cache
+        const response = await fetch("/api/send", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+                sender_id: parseInt(currentUserId),
+                receiver_id: parseInt(receiverId),
+                amount: parseFloat(amount)
+            })
+        });
+        
+        const data = await response.json();
+        
+        if (response.ok) {
+            showMessage(msgDiv, data.message, "success");
+            document.getElementById("amount").value = "";
+            loadBalance();       // refresh balance
+            loadTransactions();  // refresh history
+        } else {
+            showMessage(msgDiv, data.error, "error");
+        }
+    }
+
+    // Load transaction history
+    async function loadTransactions() {
+        const response = await fetch(`/api/transactions/${currentUserId}`);
+        const transactions = await response.json();
+        const container = document.getElementById("transactionList");
+        
+        if (transactions.length === 0) {
+            container.innerHTML = "No transactions yet.";
+            return;
+        }
+        
+        const currentUser = allUsers.find(u => u.id == currentUserId);
+        container.innerHTML = transactions.map(t => {
+            const isSender = t.sender === currentUser.name;
+            return `
+                <div class="transaction">
+                    <div>
+                        <div class="tx-name">${isSender ? `To: ${t.receiver}` : `From: ${t.sender}`}</div>
+                        <div class="tx-date">${t.date}</div>
+                    </div>
+                    <div class="tx-amount ${isSender ? 'tx-sent' : 'tx-received'}">
+                        ${isSender ? '-' : '+'}₹${parseFloat(t.amount).toFixed(2)}
+                    </div>
+                </div>
+            `;
+        }).join("");
+    }
+
+    // Tab switching
+    function showTab(tab) {
+        document.querySelectorAll(".tab").forEach(t => t.classList.remove("active"));
+        event.target.classList.add("active");
+        document.getElementById("sendSection").classList.toggle("hidden", tab !== "send");
+        document.getElementById("historySection").classList.toggle("hidden", tab !== "history");
+        if (tab === "history") loadTransactions();
+    }
+
+    // Show success/error messages
+    function showMessage(div, text, type) {
+        div.className = `message message-${type}`;
+        div.textContent = text;
+        div.classList.remove("hidden");
+        setTimeout(() => div.classList.add("hidden"), 3000);
+    }
+
+    // Load users when page opens
+    loadUsers();
+    </script>
+</body>
+</html>

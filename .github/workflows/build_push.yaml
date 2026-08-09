@@ -1,0 +1,79 @@
+name: Build and Push to ECR
+
+on:
+  push:
+    branches:
+      - main
+
+env:
+  AWS_REGION: ap-south-2
+  ECR_REGISTRY: 922120356958.dkr.ecr.ap-south-2.amazonaws.com
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      - name: Login to Amazon ECR
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Set Image Tag
+        run: echo "IMAGE_TAG=${GITHUB_RUN_NUMBER}" >> $GITHUB_ENV
+
+      - name: Build Backend Image
+        run: |
+          docker build \
+          -t gpay-backend:${IMAGE_TAG} \
+          ./backend
+
+      - name: Build Frontend Image
+        run: |
+          docker build \
+          -t gpay-frontend:${IMAGE_TAG} \
+          ./frontend
+
+      - name: Build Nginx Image
+        run: |
+          docker build \
+          -t gpay-nginx:${IMAGE_TAG} \
+          ./nginx
+
+      - name: Tag Images
+        run: |
+          docker tag gpay-backend:${IMAGE_TAG} ${ECR_REGISTRY}/gpay-backend:${IMAGE_TAG}
+          docker tag gpay-backend:${IMAGE_TAG} ${ECR_REGISTRY}/gpay-backend:latest
+
+          docker tag gpay-frontend:${IMAGE_TAG} ${ECR_REGISTRY}/gpay-frontend:${IMAGE_TAG}
+          docker tag gpay-frontend:${IMAGE_TAG} ${ECR_REGISTRY}/gpay-frontend:latest
+
+          docker tag gpay-nginx:${IMAGE_TAG} ${ECR_REGISTRY}/gpay-nginx:${IMAGE_TAG}
+          docker tag gpay-nginx:${IMAGE_TAG} ${ECR_REGISTRY}/gpay-nginx:latest
+
+      - name: Push Backend Image
+        run: |
+          docker push ${ECR_REGISTRY}/gpay-backend:${IMAGE_TAG}
+          docker push ${ECR_REGISTRY}/gpay-backend:latest
+
+      - name: Push Frontend Image
+        run: |
+          docker push ${ECR_REGISTRY}/gpay-frontend:${IMAGE_TAG}
+          docker push ${ECR_REGISTRY}/gpay-frontend:latest
+
+      - name: Push Nginx Image
+        run: |
+          docker push ${ECR_REGISTRY}/gpay-nginx:${IMAGE_TAG}
+          docker push ${ECR_REGISTRY}/gpay-nginx:latest
