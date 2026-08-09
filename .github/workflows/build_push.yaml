@@ -9,6 +9,7 @@ on:
 env:
   AWS_REGION: ap-south-2
   ECR_REGISTRY: 922120356958.dkr.ecr.ap-south-2.amazonaws.com
+  ECR_REPOSITORY: mini-gpay
 
 jobs:
   build-and-push:
