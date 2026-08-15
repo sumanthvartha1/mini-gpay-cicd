@@ -1,4 +1,3 @@
-#github actions workflow to build docker image and push to AWS ECR
 name: Build and Push to ECR
 
 on:
@@ -9,7 +8,6 @@ on:
 env:
   AWS_REGION: ap-south-2
   ECR_REGISTRY: 922120356958.dkr.ecr.ap-south-2.amazonaws.com
-  
 
 jobs:
   build-and-push:
@@ -19,7 +17,6 @@ jobs:
       contents: read
 
     steps:
-
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -39,20 +36,14 @@ jobs:
       - name: Build Backend Image
         run: |
           docker build \
-          -t gpay-backend:${IMAGE_TAG} \
-          ./backend
+            -t gpay-backend:${IMAGE_TAG} \
+            ./backend
 
       - name: Build Frontend Image
         run: |
           docker build \
-          -t gpay-frontend:${IMAGE_TAG} \
-          ./frontend
-
-      - name: Build Nginx Image
-        run: |
-          docker build \
-          -t gpay-nginx:${IMAGE_TAG} \
-          ./nginx
+            -t gpay-frontend:${IMAGE_TAG} \
+            ./frontend
 
       - name: Tag Images
         run: |
@@ -61,9 +52,6 @@ jobs:
 
           docker tag gpay-frontend:${IMAGE_TAG} ${ECR_REGISTRY}/gpay-frontend:${IMAGE_TAG}
           docker tag gpay-frontend:${IMAGE_TAG} ${ECR_REGISTRY}/gpay-frontend:latest
-
-          docker tag gpay-nginx:${IMAGE_TAG} ${ECR_REGISTRY}/gpay-nginx:${IMAGE_TAG}
-          docker tag gpay-nginx:${IMAGE_TAG} ${ECR_REGISTRY}/gpay-nginx:latest
 
       - name: Push Backend Image
         run: |
@@ -74,8 +62,3 @@ jobs:
         run: |
           docker push ${ECR_REGISTRY}/gpay-frontend:${IMAGE_TAG}
           docker push ${ECR_REGISTRY}/gpay-frontend:latest
-
-      - name: Push Nginx Image
-        run: |
-          docker push ${ECR_REGISTRY}/gpay-nginx:${IMAGE_TAG}
-          docker push ${ECR_REGISTRY}/gpay-nginx:latest
