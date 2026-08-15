@@ -14,6 +14,14 @@ from psycopg2.extras import RealDictCursor
 
 app = Flask(__name__)
 
+# Health check endpoint
+@app.route("/health")
+def health():
+    return {
+        "status": "healthy",
+        "service": "backend"
+    }, 200
+
 def get_db():
     """Create a new database connection.
     DB_HOST is 'postgres' — the service name in docker-compose.yml.
@@ -56,6 +64,8 @@ def wait_for_db():
 # ============================================
 # API ROUTES — each one handles a different action
 # ============================================
+
+
 
 # ROUTE 1: Get all users
 @app.route("/api/users")
