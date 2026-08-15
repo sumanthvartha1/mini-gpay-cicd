@@ -220,11 +220,6 @@ def get_transactions(user_id):
     
     return jsonify(result)
 
-# ROUTE 5: Health check — ECS/Kubernetes uses this to verify the app is alive
-@app.route("/api/health")
-def health():
-    """Simple health check endpoint. Returns 200 if the app is running."""
-    return jsonify({"status": "healthy"})
 # ROUTE 6 : NEW ROUTE
 @app.route("/api/status")
 def status():
