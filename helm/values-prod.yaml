@@ -1,0 +1,13 @@
+namespace: prod
+
+frontend:
+  replicas: 3
+
+backend:
+  replicas: 3
+
+postgres:
+  storage: 20Gi
+
+ingress:
+  host: gpay.company.com

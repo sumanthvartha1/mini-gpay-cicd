@@ -1,0 +1,13 @@
+namespace: staging
+
+frontend:
+  replicas: 2
+
+backend:
+  replicas: 2
+
+postgres:
+  storage: 5Gi
+
+ingress:
+  host: staging.gpay.local

@@ -1,0 +1,28 @@
+namespace: dev
+
+frontend:
+  replicas: 1
+  image: 922120356958.dkr.ecr.ap-south-2.amazonaws.com/gpay-frontend
+  tag: latest
+
+backend:
+  replicas: 1
+  image: 922120356958.dkr.ecr.ap-south-2.amazonaws.com/gpay-backend
+  tag: latest
+
+postgres:
+  image: postgres
+  tag: 15-alpine
+  storage: 1Gi
+
+redis:
+  image: redis
+  tag: 7-alpine
+
+secret:
+  dbName: payments
+  dbUser: admin
+  dbPassword: password123
+
+ingress:
+  host: mini-gpay.local
