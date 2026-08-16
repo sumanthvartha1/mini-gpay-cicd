@@ -17,7 +17,8 @@ spec:
       - name: ecr-secret
       containers:
       - name: backend
-        image: "{{ .Values.backend.image }}:{{ .Values.backend.tag }}"
+        
+        image: "{{ .Values.backend.image }}:{{ required "backend.tag is required" .Values.backend.tag }}"
         # IMPORTANT: replace 922120356958 with YOUR account ID
         ports:
         - containerPort: 5000

@@ -2,6 +2,7 @@ namespace: dev
 
 frontend:
   replicas: 1
+  tag: "14"
 
 backend:
   replicas: 1
