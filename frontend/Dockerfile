@@ -1,6 +1,9 @@
-FROM nginx:alpine
+FROM python:3.12-alpine
 
-COPY index.html /usr/share/nginx/html/index.html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+WORKDIR /app
 
-EXPOSE 80
+COPY index.html .
+
+EXPOSE 8000
+
+CMD ["python", "-m", "http.server", "8000", "--bind", "0.0.0.0"]
