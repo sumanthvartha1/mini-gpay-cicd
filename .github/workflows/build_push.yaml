@@ -31,7 +31,7 @@ jobs:
         uses: aws-actions/amazon-ecr-login@v2
 
       - name: Set Image Tag
-        run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV  
+        run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
 
       - name: Build Backend Image
         run: |
@@ -48,17 +48,12 @@ jobs:
       - name: Tag Images
         run: |
           docker tag gpay-backend:${IMAGE_TAG} ${ECR_REGISTRY}/gpay-backend:${IMAGE_TAG}
-          docker tag gpay-backend:${IMAGE_TAG} ${ECR_REGISTRY}/gpay-backend:latest
-
           docker tag gpay-frontend:${IMAGE_TAG} ${ECR_REGISTRY}/gpay-frontend:${IMAGE_TAG}
-          docker tag gpay-frontend:${IMAGE_TAG} ${ECR_REGISTRY}/gpay-frontend:latest
 
       - name: Push Backend Image
         run: |
           docker push ${ECR_REGISTRY}/gpay-backend:${IMAGE_TAG}
-          docker push ${ECR_REGISTRY}/gpay-backend:latest
 
       - name: Push Frontend Image
         run: |
           docker push ${ECR_REGISTRY}/gpay-frontend:${IMAGE_TAG}
-          docker push ${ECR_REGISTRY}/gpay-frontend:latest
