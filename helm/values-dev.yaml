@@ -2,10 +2,11 @@ namespace: dev
 
 frontend:
   replicas: 1
-  tag: "14"
+  tag: "035108b"
 
 backend:
   replicas: 1
+  tag: "035108b"
 
 postgres:
   storage: 1Gi
