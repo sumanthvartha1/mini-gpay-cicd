@@ -1,59 +1,56 @@
 name: Build and Push to ECR
-
 on:
   push:
     branches:
       - main
-
+    paths-ignore:
+      - 'helm/values-dev.yaml'
 env:
   AWS_REGION: ap-south-2
   ECR_REGISTRY: 922120356958.dkr.ecr.ap-south-2.amazonaws.com
-
 jobs:
   build-and-push:
     runs-on: ubuntu-latest
-
     permissions:
-      contents: read
-
+      contents: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
-
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v4
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
-
       - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
-
       - name: Set Image Tag
         run: echo "IMAGE_TAG=${GITHUB_SHA::7}" >> $GITHUB_ENV
-
       - name: Build Backend Image
         run: |
           docker build \
             -t gpay-backend:${IMAGE_TAG} \
             ./backend
-
       - name: Build Frontend Image
         run: |
           docker build \
             -t gpay-frontend:${IMAGE_TAG} \
             ./frontend
-
       - name: Tag Images
         run: |
           docker tag gpay-backend:${IMAGE_TAG} ${ECR_REGISTRY}/gpay-backend:${IMAGE_TAG}
           docker tag gpay-frontend:${IMAGE_TAG} ${ECR_REGISTRY}/gpay-frontend:${IMAGE_TAG}
-
       - name: Push Backend Image
         run: |
           docker push ${ECR_REGISTRY}/gpay-backend:${IMAGE_TAG}
-
       - name: Push Frontend Image
         run: |
           docker push ${ECR_REGISTRY}/gpay-frontend:${IMAGE_TAG}
+      - name: Update Helm values with new image tag
+        run: |
+          sed -i "s/tag: .*/tag: \"${IMAGE_TAG}\"/" helm/values-dev.yaml
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add helm/values-dev.yaml
+          git commit -m "ci: update image tag to ${IMAGE_TAG} [skip ci]"
+          git push
