@@ -6,6 +6,7 @@ import redis
 from flask import Flask, jsonify, request
 from psycopg2.extras import RealDictCursor
 
+#just change to see the argo cd detect change
 # ============================================
 # SETUP — connect to services using Docker DNS
 # ============================================
