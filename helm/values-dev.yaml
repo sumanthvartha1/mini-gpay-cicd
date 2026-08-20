@@ -5,7 +5,7 @@ frontend:
   tag: "035108b"
 
 backend:
-  replicas: 1
+  replicas: 2
   tag: "035108b"
 
 postgres:
